@@ -6,12 +6,17 @@ if (!isset($_SESSION['user_id']))
     exit();
 }
 
-if (isset($_GET['logout']))
-{
-    session_destroy();
-    header('Location: login.php');
-    exit();
+if($_GET){
+	if(isset($_GET['passwordChangeSuccessful']))
+		$passwordChangeMessage = '<div class="alert alert-success">Heslo bylo úspěšně změněno</div>';
+	
+	else if (isset($_GET['logout'])) {
+		session_destroy();
+		header('Location: login.php');
+		exit();
+	}
 }
+
 require('Db.php');
 Db::connect('127.0.0.1', 'ners', 'root', '');
 $user = Db::queryOne('
@@ -23,7 +28,7 @@ $user = Db::queryOne('
 	
 
 if($_POST){
-    if($_POST['save']){
+    if(isset($_POST['save'])){
         $successfulySaved = Db::query('
             UPDATE users
             SET about=?, email=?, username=?
@@ -41,7 +46,7 @@ if($_POST){
         }
         
 	}
-	else if($_POST['changePassword']){
+	else if(isset($_POST['changePassword'])){
 		if($_POST['newPassword'] == $_POST['newPasswordAgain'] && $_POST['year'] == date('Y')){
 			$newPassword = password_hash($_POST['newPassword'], PASSWORD_DEFAULT);
             Db::query('
@@ -49,7 +54,9 @@ if($_POST){
             SET password=?
             WHERE user_id=?
             ', $newPassword, $_SESSION['user_id']);
-            $passwordChangeMessage = '<div class="alert alert-success">Heslo bylo úspěšně změněno</div>';
+            
+            header('Location: user.php?passwordChangeSuccessful');
+            exit();
 		}
 		else{
 			$passwordChangeMessage = '<div class="alert alert-danger">Špatně vyplněná hesla nebo rok.</div>';
@@ -84,6 +91,11 @@ if($_POST){
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
 		  <li><a class="active" href="user.php"><span class="glyphicon glyphicon-user"></span> <?= htmlspecialchars($_SESSION['username']) ?></a></li>
+		  <?php
+			if(!empty($_SESSION['level'])){
+				echo('<li><a href="editor.php"><span class="glyphicon glyphicon-font"></span> Editor</a></li>');
+			}
+		  ?>
 		</ul>
 
 	</nav>
@@ -104,7 +116,7 @@ if($_POST){
 
 <div class="container">
   <div class="jumbotron text-center">
-	  <h1>Skautský Oddíl Velena Fandrlíka</h1>
+	  <h1>Skautský oddíl Velena Fanderlika</h1>
 	  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit....</p>
   </div>
   
@@ -115,35 +127,44 @@ if($_POST){
   				<h1>Administrace</h1>
   			</header>
   			<section>
-				<p>Vítejte v administraci. Vaše jméno je <?=htmlspecialchars($_SESSION['username'])?> a vaše úroveň je <?=htmlspecialchars($_SESSION['level'])?></p>
-				<a href="editor.php" class="btn btn-lg btn-default">Editor článků</a><br /><br />
+				<p>Vítejte v administraci. Vaše jméno je <?= htmlspecialchars($_SESSION['username']) ?> a vaše úroveň je <?= htmlspecialchars($_SESSION['level']) ?>.</p>
 				<?php
 					if(isset($message)){
 						echo($message);
 					}
 				?>
 				<form method="post">
-					<div class="form-group">
-                            Jméno:
-                            <br /><input type="text" name="username" class="responsive fancy-input" value="<?= htmlspecialchars($user['username'])?>"><br /><br />
-                            Email:
-                            <br /><input type="email" name="email" class="responsive fancy-input" value="<?= htmlspecialchars($user['email'])?>"><br /><br />
-                            Popisek:
-                            <br /><textarea rows="8" name="about" class="fancy-areainput" ><?= htmlspecialchars($user['about'])?></textarea><br /><br />
+                            <label for="username">Jméno:</label><br />
+                            <input type="text" id="username" name="username" class="responsive fancy-input" value="<?= htmlspecialchars($user['username'])?>"><br /><br />
+                            
+                            <label for="email">Email:</label><br />
+                            <input type="email" id="email" name="email" class="responsive fancy-input" value="<?= htmlspecialchars($user['email'])?>"><br /><br />
+                            
+                            <label for="about">Popisek:</label><br />
+                            <textarea rows="8" id="about" name="about" class="fancy-areainput" ><?= htmlspecialchars($user['about'])?></textarea><br /><br />
      
-                            <input name="save" type="submit" class="form-control btn btn-primary" value="Uložit" />
-                     </div>
+                            <input name="save" type="submit" class="btn btn-primary" value="Uložit" />
                  </form>
+                 <br />
 				<a href="user.php?logout" class="btn btn-lg btn-default">Odhlásit se</a>
 			</section>
   		</article>
     </div>
     
+    
     <div class="col-sm-4">
       <article>
 		<header><h1>Mé články</h1></header>
 		  <section>
-			<p>zde jsou moje články</p>
+			  <?php
+				if(!empty($_SESSION['level'])){
+					echo('
+						<a href="editor.php" class="btn btn-default">Editor článků</a>
+					');
+				} else{
+					echo('<p>Nemáte oprávnění na psaní článků. Požádejte nás, abychom vám ho přidělili v sekci kontakt.</p>');
+				}
+				?>
 		  </section>
       </article>
     </div>
@@ -152,21 +173,26 @@ if($_POST){
 		<header><h1>Změna hesla</h1></header>
 		  <section>
 			<?php
-					if(isset($passwordChangeMessage)){
-						echo($passwordChangeMessage);
-					}
-				?>
-				<form method="post">
-					<div class="form-group">
-                            Nové heslo
-                            <br /><input type="password" name="newPassword" class="responsive fancy-input" ><br /><br />
-                            Nové heslo znovu
-                            <br /><input type="password" name="newPasswordAgain" class="responsive fancy-input" ><br /><br />
-							Rok
-                            <br /><input type="text" name="year" class="responsive fancy-input" ><br /><br />
-                            <input name="changePassword" type="submit" class="form-control btn btn-primary" value="Uložit" />
-                     </div>
-                 </form>
+				$newPassword = (isset($_POST['newPassword'])) ? $_POST['newPassword'] : '';
+				$newPasswordAgain = (isset($_POST['newPasswordAgain'])) ? $_POST['newPasswordAgain'] : '';
+				$year = (isset($_POST['year'])) ? $_POST['year'] : '';
+				
+				if(isset($passwordChangeMessage)){
+					echo($passwordChangeMessage);
+				}
+			?>
+			<form method="post">
+				<label for="newPassword">Nové heslo</label><br />
+				<input type="password" id="newPassword" name="newPassword" value="<?= htmlspecialchars($newPassword) ?>" class="responsive fancy-input" ><br /><br />
+				
+				<label for="newPasswordAgain">Nové heslo znovu</label><br />
+				<input type="password" id="newPasswordAgain" name="newPasswordAgain" value="<?= htmlspecialchars($newPasswordAgain) ?>" class="responsive fancy-input" ><br /><br />
+				
+				<label for="year">Rok</label><br />
+				<input type="text" id="year" name="year" value="<?= htmlspecialchars($year) ?>" class="responsive fancy-input" ><br /><br />
+				
+				<input name="changePassword" type="submit" class="form-control btn btn-primary" value="Uložit" />
+			</form>
 		  </section>
       </article>
     </div>

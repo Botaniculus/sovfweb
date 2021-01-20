@@ -2,31 +2,27 @@
 session_start();
 mb_internal_encoding("UTF-8");
 
+$hlaska = (isset($_GET['success'])) ? ('<div class="alert alert-success">' . '<strong>Zpráva byla úspěšně odeslána.</strong> Budeme se Vám snažit odpovědět co nejdříve.' . '</div>') : '';
 
-$hlaska = '';
-$ok=false;
-    if ($_POST) // V poli _POST něco je, odeslal se formulář
-    {
-
-        if (isset($_POST['senderName']) && $_POST['senderName'] &&
-      			isset($_POST['senderEmail']) && $_POST['senderEmail'] &&
-      			isset($_POST['senderMessage']) && $_POST['senderMessage'] &&
-      			isset($_POST['year']) && $_POST['year'] == date('Y'))
-        {
-            $header = 'From:' . $_POST['senderEmail'];
-            $header .= "\nMIME-Version: 1.0\n";
-            $header .= "Content-Type: text/html; charset=\"utf-8\"\n";
-            $address = 'bofin@skaut.cz';
-            $subject = 'Nová zpráva z mailformu';
-            
-            if (mb_send_mail($address, $subject, $_POST['senderMessage'], $header))
-            {
-            $hlaska = '<div class="alert alert-success">' . '<strong>Zpráva byla úspěšně odeslána.</strong> Budeme se Vám snažit odpovědět co nejdříve.' . '</div>';
-            $ok=true;
-
-            }
-            else
-                $hlaska = '<div class="alert alert-danger">' . '<strong>Email se nepodařilo odeslat.</strong>' . '</div>';
+if ($_POST)
+{
+	if (isset($_POST['senderName']) && $_POST['senderName'] &&
+      	isset($_POST['senderEmail']) && $_POST['senderEmail'] &&
+      	isset($_POST['senderMessage']) && $_POST['senderMessage'] &&
+      	isset($_POST['year']) && $_POST['year'] == date('Y'))
+	{
+		$header = 'From:' . $_POST['senderEmail'];
+		$header .= "\nMIME-Version: 1.0\n";
+		$header .= "Content-Type: text/html; charset=\"utf-8\"\n";
+		$address = 'bofin@skaut.cz';
+        $subject = 'Nová zpráva z mailformu';
+        
+		if (mb_send_mail($address, $subject, htmlspecialchars($_POST['senderMessage']), $header)) {
+			header('Location: index.php?success');
+			exit;
+        }
+        else
+			$hlaska = '<div class="alert alert-danger">' . '<strong>Email se nepodařilo odeslat.</strong>' . '</div>';
 
         }
         else
@@ -64,6 +60,11 @@ $ok=false;
 				echo('<li><a href="user.php"><span class="glyphicon glyphicon-user"></span> ' . htmlspecialchars($_SESSION['username'])  . '</a></li>');
 			else
 				echo('<li><a href="login.php"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>');
+		  ?>
+		  <?php
+			if(!empty($_SESSION['level'])){
+				echo('<li><a href="editor.php"><span class="glyphicon glyphicon-font"></span> Editor</a></li>');
+			}
 		  ?>
 		  
 		</ul>
@@ -125,16 +126,14 @@ Bohunická 43
   </header>
   <section>
     <form method="POST">
-		<div class="form-group">
-        <?php if(!$ok){
+        <?php
 			$senderName = (isset($_POST['senderName'])) ? $_POST['senderName'] : '';
 			$senderEmail = (isset($_POST['senderEmail'])) ? $_POST['senderEmail'] : '';
 			$senderMessage = (isset($_POST['senderMessage'])) ? $_POST['senderMessage'] : '';
 			$year = (isset($_POST['year'])) ? $_POST['year'] : '';
-        }
         ?>
         <?php
-        if ($hlaska!==''){
+        if ($hlaska){
             echo($hlaska);
             echo("
             <script>
@@ -143,20 +142,19 @@ Bohunická 43
             ");
         }
         ?>
-        Vaše jméno<br />
-        <input class="responsive fancy-input" placeholder="Vaše jméno" name="senderName" type="text" required="required" value="<?= htmlspecialchars($senderName) ?>" />
+        <label for="senderName">Vaše jméno</label><br />
+        <input class="responsive fancy-input" placeholder="Vaše jméno" id="senderName" name="senderName" type="text" required="required" value="<?= htmlspecialchars($senderName) ?>" /><br /><br />
 
-        <br /><br />Váš email<br />
-        <input class="responsive fancy-input" placeholder="Váš email" name="senderEmail" type="email" required="required" value="<?= htmlspecialchars($senderEmail) ?>" />
-
-        <br /><br />Aktuální rok<br />
-                <input class="responsive fancy-input" placeholder="Aktuální rok pro ověření" name="year" type="text" value="<?= htmlspecialchars($year) ?>" required="required"  />
-        <br /><br />Zpráva<br />
-        <textarea class="responsive fancy-areainput" placeholder="Napište sem zprávu" rows="8" required="required" name="senderMessage"><?= htmlspecialchars($senderMessage) ?></textarea>
-
-        <br /><br />
+        <label for="senderEmail">Váš email</label><br />
+        <input class="responsive fancy-input" placeholder="Váš email" id="senderEmail" name="senderEmail" type="email" required="required" value="<?= htmlspecialchars($senderEmail) ?>" /><br /><br />
+        
+        <label for="year">Aktuální rok</label><br />
+        <input class="responsive fancy-input" placeholder="Aktuální rok pro ověření" id="year" name="year" type="text" value="<?= htmlspecialchars($year) ?>" required="required"  /><br /><br />
+        
+        <label for="senderMessage">Zpráva</label><br />
+        <textarea class="responsive fancy-areainput" placeholder="Napište sem zprávu" rows="8" required="required" id="senderMessage" name="senderMessage"><?= htmlspecialchars($senderMessage) ?></textarea><br /><br />
+        
         <input type="submit" class="btn btn-primary form-control" value="Odeslat" />
-		</div>
     </form>
   </section>
 

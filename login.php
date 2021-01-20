@@ -9,7 +9,7 @@ if(isset($_SESSION['user_id'])){
 
 if($_POST)
 {
-	if($_POST['loginBtn']){
+	if(isset($_POST['loginBtn'])){
 		if(strpos($_POST['loginUsername'], '@')){
 			$user = Db::queryOne('
 					SELECT user_id, level, password, username FROM users WHERE email=?
@@ -33,7 +33,7 @@ if($_POST)
 		}
 		
 	}
-	else if($_POST['registerBtn']){
+	else if(isset($_POST['registerBtn'])){
 		if($_POST['registerYear'] != date('Y')){
 			$registerMessage = 'Zkontrolujte prosím správnost antispamu.';
 		
@@ -58,7 +58,7 @@ if($_POST)
 				exit();
 			}
 			else{
-				$registerMessage = 'Toto jméno je již obsazené. Vyberte si prosím jiné.';
+				$registerMessage = 'Tato emailová adresa nebo toto jméno je již zabrané. Vyberte si prosím jiné.';
 			}
 		}
 	}
@@ -91,6 +91,11 @@ if($_POST)
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
 		  <li><a class="active" href="login.php"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+		  <?php
+			if(!empty($_SESSION['level'])){
+				echo('<li><a href="editor.php"><span class="glyphicon glyphicon-font"></span> Editor</a></li>');
+			}
+		  ?>
 		</ul>
 
 	</nav>
@@ -125,15 +130,17 @@ if($_POST)
 				<?php
                     if (isset($loginMessage))
                         echo('<div class="alert alert-danger">' . $loginMessage . '</div>');
+                    $loginUsername = (isset($_POST['loginUsername'])) ? $_POST['loginUsername'] : '';
+                    $loginPassword = (isset($_POST['loginPassword'])) ? $_POST['loginPassword'] : '';
+                    
                 ?>
 				<form method="post">
-					<div class="form-group">
-						Jméno<br />
-						<input type="text" name="loginUsername" class="responsive fancy-input" value="<?php if (isset($_POST['loginUsername'])) echo($_POST['loginUsername']);?>"/><br />
-						Heslo<br />
-						<input type="password" name="loginPassword" class="responsive fancy-input"value="<?php if (isset($_POST['loginPassword'])) echo($_POST['loginPassword']);?>"/><br /><br />
-						<input name="loginBtn" type="submit" class="btn btn-primary btn-lg" value="Přihlásit" class="form-control"/>
-					</div>
+						<label for="loginUsername">Jméno nebo email</label><br />
+						<input type="text" id="loginUsername" placeholder="velen@fanderlik.cz, Velen" name="loginUsername" class="responsive fancy-input" value="<?= htmlspecialchars($loginUsername) ?>"/><br /><br />
+						
+						<label for="loginPassword">Heslo</label><br />
+						<input type="password" placeholder="Vel3NFanderl1K" id="loginPassword" name="loginPassword" class="responsive fancy-input"value="<?= htmlspecialchars($loginPassword) ?>"/><br /><br />
+						<input name="loginBtn" type="submit" class="btn btn-primary btn-lg" value="Přihlásit"/>
 				</form>
 			</section>
   		</article>
@@ -146,21 +153,28 @@ if($_POST)
 			  <?php
                     if (isset($registerMessage))
                         echo('<div class="alert alert-danger">' . $registerMessage . '</div>');
+                        $registerUsername = (isset($_POST['registerUsername'])) ? $_POST['registerUsername'] : '';
+                        $registerEmail = (isset($_POST['registerEmail'])) ? $_POST['registerEmail'] : '';
+                        $registerPassword = (isset($_POST['registerPassword'])) ? $_POST['registerPassword'] : '';
+                        $registerPasswordAgain = (isset($_POST['registerPasswordAgain'])) ? $_POST['registerPasswordAgain'] : '';
+                        $registerYear = (isset($_POST['registerYear'])) ? $_POST['registerYear'] : '';
                 ?>
 		  <form method="post">
-			  <div class="form-group">
-						Jméno<br />
-						<input type="text" name="registerUsername" class="responsive fancy-input" /><br />
-						Email<br />
-						<input type="email" name="registerEmail" class="responsive fancy-input" /><br />
-						Heslo<br />
-						<input type="password" name="registerPassword" class="responsive fancy-input"/><br />
-						Heslo znovu<br />
-						<input type="password" name="registerPasswordAgain" class="responsive fancy-input" /><br />
-						Zadejte aktuální rok (antispam)<br />
-						<input type="text" name="registerYear" class="responsive fancy-input" /><br /><br />
-						<input type="submit" name="registerBtn"class="btn btn-primary btn-lg" value="Registrovat" class="form-control" />
-			</div>
+						<label for="registerUsername">Jméno</label><br />
+						<input type="text" placeholder="Velen" id="registerUsername" name="registerUsername" class="responsive fancy-input" value="<?= htmlspecialchars($registerUsername) ?>"/><br /><br />
+						
+						<label for="registerEmail">Email</label><br />
+						<input type="email" placeholder="velen@fanderlik.cz" id="registerEmail" name="registerEmail" class="responsive fancy-input"  value="<?= htmlspecialchars($registerEmail) ?>"/><br /><br />
+						
+						<label for="registerPassword">Heslo</label><br />
+						<input type="password" placeholder="Vel3NFanderl1K" id="registerPassword" name="registerPassword" class="responsive fancy-input" value="<?= htmlspecialchars($registerPassword) ?>"/><br /><br />
+						
+						<label for="registerPasswordAgain">Heslo znovu</label><br />
+						<input type="password" placeholder="Vel3NFanderl1K" id="registerPasswordAgain" name="registerPasswordAgain" class="responsive fancy-input" value="<?= htmlspecialchars($registerPasswordAgain) ?>"/><br /><br />
+						
+						<label for="registerYear">Zadejte aktuální rok (antispam)</label><br />
+						<input type="text" placeholder="1996" id="registerYear" name="registerYear" class="responsive fancy-input" value="<?= htmlspecialchars($registerYear) ?>"/><br /><br />
+						<input type="submit" name="registerBtn"class="btn btn-primary btn-lg" value="Registrovat"/>
 		   </form>
 		  </section>
       </article>
